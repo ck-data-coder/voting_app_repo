@@ -304,6 +304,8 @@ catch{
   return res.status(500).send({message:"internal server error or network connection error"})
 }
 
+setTimeout(async() => {
+  
 
   const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
 
@@ -327,6 +329,7 @@ if(dob!=req.body.dob ){
   return res.status(400).send({message:"document is invalid"})
 }
 
+}, 1000);
 const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+"Name:"+req.body.name+" FatherName:"+req.body.fname+" DOB:"+req.body.dob+" Aadhar No:"+req.body.aadhar;
 
 
