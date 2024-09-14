@@ -338,7 +338,7 @@ const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="
   req.body.epic_no=epic_no;
  
   setTimeout(async()=>{
-  await   downloadImage(imageurl,req);
+     downloadImage(imageurl,req);
   },1000)
   
   const subscriptionKey = process.env.TRANSLATE_SUBSCRIPTION_KEY; // Replace with your Azure subscription key
