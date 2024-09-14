@@ -297,16 +297,19 @@ try{
     await uploadFileToAzure(picfile.buffer, blobName1);
     await uploadFileToAzure(aadharfile.buffer, blobName2);
 
-await convertImageToGrayscale(originalBlobPicfileName,grayscaleBlobPicfileName)
-await convertImageToGrayscale(originalBlobAadharfileName,grayscaleBlobAadharfileName)
+// await convertImageToGrayscale(originalBlobPicfileName,grayscaleBlobPicfileName)
+// await convertImageToGrayscale(originalBlobAadharfileName,grayscaleBlobAadharfileName)
 }
 catch{
   return res.status(500).send({message:"internal server error or network connection error"})
 }
 
-
- // const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
-
+try{
+  const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
+}
+catch{
+  return res.status(500).send({message:"internal server error or network connection error"})
+}
 
 try{
 const split_dob=extracted_aadharNo_dob[1][0].split('/')
