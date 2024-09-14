@@ -14,7 +14,7 @@
     "routes": [
      {
       "src": "/api/login",
-      "dest": "/index.js"
+      "dest": "index.js"
      },
      {
         "src": "/",
