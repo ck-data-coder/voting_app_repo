@@ -304,12 +304,9 @@ catch{
   return res.status(500).send({message:"internal server error or network connection error"})
 }
 
-try{
+
   const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
-}
-catch{
-  return res.status(500).send({message:"internal server error or network connection error"})
-}
+
 
 try{
 const split_dob=extracted_aadharNo_dob[1][0].split('/')
@@ -389,7 +386,7 @@ axios({
 
   setTimeout(async()=>{
   await  pdfgenerater(req)
-  },4000)
+  },8000)
   
    const passdob=req.body.dob.split('-').join('')
 
@@ -401,7 +398,7 @@ axios({
 
 setTimeout(async() => {
    await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
-}, 8000);
+}, 12000);
 
 
   
@@ -417,7 +414,7 @@ Voter.save().then(()=>{
   voterFormConformation(req,JWT_SECRET)
   setTimeout(() => {
     voterIdmail(req,JWT_SECRET)
-  }, 12000);
+  }, 15000);
  return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
 })
 .catch((err)=>{
@@ -573,7 +570,7 @@ axios({
 
   setTimeout(async()=>{
    await pdfgenerater(req)
-  },4000)
+  },8000)
   
    const passdob=req.body.dob.split('-').join('')
  
@@ -585,7 +582,7 @@ axios({
   
   setTimeout(async() => {
      await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
-  }, 8000);
+  }, 12000);
 
 
 try{
@@ -606,7 +603,7 @@ updateVoterFormConformation(req,JWT_SECRET)
 setTimeout(() => {
 
   updatedVoterIdmail(req,JWT_SECRET)
-}, 12000);
+}, 15000);
 return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
 }
 catch(err){
