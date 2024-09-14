@@ -28,7 +28,7 @@ const adminPassword=process.env.ADMIN_PASSWORD;
 
 // JWT verification middleware
 function authenticateToken(req, res, next) {
-//  console.log(req.body)
+
   const authHeader = req.headers['authorization'];
  
   const token = authHeader && authHeader.split(' ')[1]; // Extract the token from 'Bearer <token>'
