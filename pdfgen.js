@@ -1,15 +1,30 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
+import { downloadImageFromAzure, uploadFileToAzure } from './fileupload.js';
 
 
 
 
 async function pdfgenerater(req) {
+  const picfile=req.files['picfile'][0]
+  const picfileBuffer = await downloadImageFromAzure(`${req.body.aadhar}/${picfile.originalname}`)
+  const picfilegrayBuffer = await downloadImageFromAzure(`${req.body.aadhar}/bnw/${picfile.originalname}`)
+   
+  const qrcodeBuffer = await downloadImageFromAzure(`${req.body.aadhar}/qrcode.png`)
+   
+  const doc = new PDFDocument();
+  const pdfChunks = [];
     
-    const doc = new PDFDocument();
-    
+  // Collect the PDF data into chunks (to store it in memory)
+  doc.on('data', chunk => pdfChunks.push(chunk));
+  doc.on('end', async () => {
+    const pdfBuffer = Buffer.concat(pdfChunks);
+
+    // Step 3: Upload the PDF buffer to Azure Blob Storage
+    await uploadFileToAzure(pdfBuffer,`${req.body.aadhar}/voterfile.pdf`);
+  });
       
-    doc.pipe(fs.createWriteStream("./upload/"+`${req.body.aadhar}`+"/"+`${req.body.aadhar}`+'.pdf'));
+    // doc.pipe(fs.createWriteStream("./upload/"+`${req.body.aadhar}`+"/"+`${req.body.aadhar}`+'.pdf'));
     const backgroundImagePath = './photos/voter.jpeg'; // Path to your background image
     const backgroundWidth = 250; // Specify the desired width
     const backgroundHeight = 150; // Specify the desired height
@@ -66,15 +81,15 @@ async function pdfgenerater(req) {
 
 
     
-        doc.image("./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0]['filename']}`, 50, 160, { width: 60 , height:70}); // 
+        doc.image(picfileBuffer, 50, 160, { width: 60 , height:70}); // 
 
-        doc.image("./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['picfile'][0]['filename']}`,253,140,{width:25})
+        doc.image(picfilegrayBuffer,253,140,{width:25})
   
        
       try{
-        doc.image("./upload/"+`${req.body.aadhar}`+"/"+'qrcode.png',353,140,{width:65})
+        doc.image(qrcodeBuffer,353,140,{width:65})
         
-        doc.image("./upload/"+`${req.body.aadhar}`+"/"+'qrcode.png',45,340,{width:130})
+        doc.image(qrcodeBuffer,45,340,{width:130})
       }catch{}
  //line upper to qrcode
         doc.moveTo(30, 300)       // Start the line at x=100, y=150

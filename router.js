@@ -297,8 +297,8 @@ try{
     await uploadFileToAzure(picfile.buffer, blobName1);
     await uploadFileToAzure(aadharfile.buffer, blobName2);
 
-// await convertImageToGrayscale(originalBlobPicfileName,grayscaleBlobPicfileName)
-// await convertImageToGrayscale(originalBlobAadharfileName,grayscaleBlobAadharfileName)
+await convertImageToGrayscale(originalBlobPicfileName,grayscaleBlobPicfileName)
+await convertImageToGrayscale(originalBlobAadharfileName,grayscaleBlobAadharfileName)
 }
 catch{
   return res.status(500).send({message:"internal server error or network connection error"})
@@ -389,7 +389,7 @@ axios({
 
   setTimeout(async()=>{
   await  pdfgenerater(req)
-  },3000)
+  },4000)
   
    const passdob=req.body.dob.split('-').join('')
 
@@ -401,7 +401,7 @@ axios({
 
 setTimeout(async() => {
    await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
-}, 5000);
+}, 8000);
 
 
   
@@ -417,7 +417,7 @@ Voter.save().then(()=>{
   voterFormConformation(req,JWT_SECRET)
   setTimeout(() => {
     voterIdmail(req,JWT_SECRET)
-  }, 7000);
+  }, 12000);
  return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
 })
 .catch((err)=>{
