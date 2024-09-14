@@ -72,7 +72,8 @@ catch (error) {
 }
 
 
-async function deleteFolderInContainer(folderName) {
+async function deleteFolderInContainer(folderName,files) {
+  // console.log(files)
   try {
     let marker = undefined;
     do {
@@ -85,9 +86,11 @@ async function deleteFolderInContainer(folderName) {
           // Get the blob client for each blob
           const blockBlobClient = containerClient.getBlockBlobClient(blob.name);
           
+          if(blob.name==`${folderName}/${files['address_proof'][0].originalname}` || blob.name==`${folderName}/${files['picfile'][0].originalname}` ){
           // Delete the blob
           await blockBlobClient.delete();
           console.log(`Deleted blob: ${blob.name}`);
+          }
       }
       
       // Update the marker for the next page of results
@@ -103,12 +106,14 @@ async function deleteFolderInContainer(folderName) {
     });
 
     for await (const blob of listBlobsResponse) {
+      // console.log(blob)
         // Get the blob client for each blob
         const blockBlobClient = containerClient.getBlockBlobClient(blob.name);
-        
+        if(blob.name==`${folderName}/bnw/${files['address_proof'][0].originalname}` || blob.name==`${folderName}/bnw/${files['picfile'][0].originalname}` ){
         // Delete the blob
         await blockBlobClient.delete();
         console.log(`Deleted blob: ${blob.name}`);
+        }
     }
     
     // Update the marker for the next page of results

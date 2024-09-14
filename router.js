@@ -304,7 +304,7 @@ catch{
   return res.status(500).send({message:"internal server error or network connection error"})
 }
 
-setTimeout(async() => {
+
   
 
   const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
@@ -317,19 +317,19 @@ const aadhar=extracted_aadharNo_dob[0][0].split(' ').join('')
 
 
 if(aadhar!=req.body.aadhar ){
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(400).send({message:"aadhar number is not match with aadhar document"})
 }
 if(dob!=req.body.dob ){
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(400).send({message:"dob is not match with aadhar document"})
 }
 }catch{
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(400).send({message:"document is invalid"})
 }
 
-}, 1000);
+
 const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+"Name:"+req.body.name+" FatherName:"+req.body.fname+" DOB:"+req.body.dob+" Aadhar No:"+req.body.aadhar;
 
 
@@ -383,7 +383,7 @@ axios({
   // console.log('Translation:', response.data[0].translations[0].text);
   req.body.marathidata=response.data[0].translations[0].text;
 }).catch((err)=>{
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(500).send({message:'server error'})
 })
 
@@ -417,11 +417,12 @@ Voter.save().then(()=>{
   voterFormConformation(req,JWT_SECRET)
   setTimeout(() => {
     voterIdmail(req,JWT_SECRET)
-  }, 15000);
+ 
  return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
+}, 15000);
 })
 .catch((err)=>{
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
 return res.send({message:err})
 })
 
@@ -499,7 +500,7 @@ catch{
   return res.status(500).send({message:"internal server error or network connection error"})
 }
 
-setTimeout(async() => {
+
   
 
 const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
@@ -511,19 +512,19 @@ const aadhar=extracted_aadharNo_dob[0][0].split(' ').join('')
 
 
 if(aadhar!=req.body.aadhar ){
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(400).send({message:"aadhar number is not match with aadhar document"})
 }
 if(dob!=req.body.dob ){
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(400).send({message:"dob is not match with aadhar document"})
 }
 }catch{
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(400).send({message:"document is invalid"})
 }
 
-}, 1000);
+
 const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+"Name:"+req.body.name+" FatherName:"+req.body.fname+" DOB:"+req.body.dob+" Aadhar No:"+req.body.aadhar;
 
 
@@ -571,7 +572,7 @@ axios({
   // console.log('Translation:', response.data[0].translations[0].text);
   req.body.marathidata=response.data[0].translations[0].text;
 }).catch((err)=>{
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
   return res.status(500).send({message:'server error'})
 })
 
@@ -610,14 +611,14 @@ updateVoterFormConformation(req,JWT_SECRET)
 setTimeout(() => {
 
   updatedVoterIdmail(req,JWT_SECRET)
-}, 15000);
-setTimeout(() => {
+
+
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 4000);
+}, 15000);
 
 }
 catch(err){
-  deleteFolderInContainer(`${req.body.aadhar}`)
+  deleteFolderInContainer(`${req.body.aadhar}`,req.files)
  return res.send({message:err})
 }
 })
