@@ -1,0 +1,37 @@
+{
+  "files": {
+    "main.css": "/static/css/main.ce88e77d.css",
+    "main.js": "/static/js/main.a53a0fc2.js",
+    "static/media/slide6.jpg": "/static/media/slide6.1898dd19942cef2b6a9e.jpg",
+    "static/media/slide5.jpg": "/static/media/slide5.63c7b531a648e6563364.jpg",
+    "static/media/slide7.jpg": "/static/media/slide7.f1175a723816ebf6fd31.jpg",
+    "static/media/signup.jpg": "/static/media/signup.1906d116f8ea2a581ac1.jpg",
+    "static/media/slide1.jpg": "/static/media/slide1.56aaad1a4dc3295d5b31.jpg",
+    "static/media/back.png": "/static/media/back.90e39179286c92b33c53.png",
+    "static/media/slide4.jpg": "/static/media/slide4.d6f388781b309d050905.jpg",
+    "static/media/eci.png": "/static/media/eci.7cbe03caf535b7465606.png",
+    "static/media/logo.jpg": "/static/media/logo.b9ec86c8457260a81206.jpg",
+    "static/media/previous.webp": "/static/media/previous.85aeaf66eba00269dbf0.webp",
+    "static/media/apply.jpg": "/static/media/apply.83ad9643419526beabe3.jpg",
+    "static/media/instagram.png": "/static/media/instagram.edb90ecc706a7a25542b.png",
+    "static/media/linkedin.png": "/static/media/linkedin.7e8e9345ec14c0ed2ccd.png",
+    "static/media/slide11.jpeg": "/static/media/slide11.9822cd389fbb68deeda8.jpeg",
+    "static/media/slide14.jpeg": "/static/media/slide14.37d4aef611ce004a34ae.jpeg",
+    "static/media/slide15.jpeg": "/static/media/slide15.132598ff7ba5b6be706a.jpeg",
+    "static/media/slide18.jpeg": "/static/media/slide18.646f77f47580904b2f71.jpeg",
+    "static/media/result.jpeg": "/static/media/result.ee1631ed4662f1221480.jpeg",
+    "static/media/slide8.jpeg": "/static/media/slide8.6f92add99be121cdc842.jpeg",
+    "static/media/flat-design-vector-illustration-logo-260nw-1933475405.webp": "/static/media/flat-design-vector-illustration-logo-260nw-1933475405.bc3d4b5e552db38d08e3.webp",
+    "static/media/download-icon-vector-upload-button-260nw-2408758909.webp": "/static/media/download-icon-vector-upload-button-260nw-2408758909.0374945dd0fa49a002ce.webp",
+    "static/media/twitter.webp": "/static/media/twitter.93e8095544145f69b93a.webp",
+    "static/media/update-button_592324-19469.avif": "/static/media/update-button_592324-19469.acafb66ed42c72803d1e.avif",
+    "index.html": "/index.html",
+    "static/media/Indian_National_Congress-logo.webp": "/static/media/Indian_National_Congress-logo.249c6efa0bc78bb7de01.webp",
+    "main.ce88e77d.css.map": "/static/css/main.ce88e77d.css.map",
+    "main.a53a0fc2.js.map": "/static/js/main.a53a0fc2.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ce88e77d.css",
+    "static/js/main.a53a0fc2.js"
+  ]
+}
