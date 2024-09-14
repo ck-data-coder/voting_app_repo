@@ -305,7 +305,7 @@ catch{
 }
 
 
-  const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
+ // const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
 
 
 try{
