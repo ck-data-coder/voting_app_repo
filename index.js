@@ -15,7 +15,7 @@ server.use(cors())
 server.use(bodyParser.json())
 server.use(bodyParser.urlencoded({extended:false}))
 server.use(express.static(path.join(__dirname,'build')))
-server.use('/api/login',router)
+server.use('/api',router)
 server.use('*',(req,res)=>{
     res.sendFile(path.join(__dirname,'build','index.html'))
 })
