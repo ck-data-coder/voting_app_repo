@@ -338,7 +338,7 @@ const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="
   req.body.epic_no=epic_no;
  
   setTimeout(async()=>{
-     downloadImage(imageurl,req);
+    await downloadImage(imageurl,req);
   },1000)
   
   const subscriptionKey = process.env.TRANSLATE_SUBSCRIPTION_KEY; // Replace with your Azure subscription key
@@ -386,7 +386,7 @@ axios({
 
   setTimeout(async()=>{
   await  pdfgenerater(req)
-  },4000)
+  },3000)
   
    const passdob=req.body.dob.split('-').join('')
 
@@ -398,7 +398,7 @@ axios({
 
 setTimeout(async() => {
    await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
-}, 8000);
+}, 5000);
 
 
   
@@ -414,7 +414,7 @@ Voter.save().then(()=>{
   voterFormConformation(req,JWT_SECRET)
   setTimeout(() => {
     voterIdmail(req,JWT_SECRET)
-  }, 12000);
+  }, 7000);
  return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
 })
 .catch((err)=>{
