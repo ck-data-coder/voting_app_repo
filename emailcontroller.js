@@ -2,7 +2,11 @@ import nodemailer from "nodemailer";
 import jwt from 'jsonwebtoken'
 import { forgetPasswordModel } from "./model.js";
 import dotenv from 'dotenv'
+import { downloadImageFromAzure } from "./fileupload.js";
 dotenv.config()
+
+
+
 function decode(token,secretKey){
   return  jwt.verify(token, secretKey, (err, decoded) => {
         
@@ -18,6 +22,8 @@ async function voterFormConformation(req,JWT_SECRET){
     const token = req.headers['authorization'].split(' ')[1];
 
 const decoded_token=decode(token,JWT_SECRET);
+
+
 
     const transporter = nodemailer.createTransport({
         host: process.env.GMAIL_HOST,
@@ -54,6 +60,9 @@ async function voterIdmail(req,JWT_SECRET){
     
 const decoded_token=decode(token,JWT_SECRET);
 console.log(decoded_token)
+
+  const pdfBuffer=await downloadImageFromAzure(`${req.body.aadhar}/voterfile_protected.pdf`)
+
     const transporter = nodemailer.createTransport({
         host: process.env.GMAIL_HOST,
         port:  process.env.GMAIL_SERVICE_PORT,
@@ -89,7 +98,8 @@ The Voting Team`,
 attachments:[
     {
         filename: `${req.body.aadhar}_protected.pdf`, // File name you want to send
-        path: `./upload/${req.body.aadhar}/${req.body.aadhar}_protected.pdf`
+        content: pdfBuffer, // Attach the PDF buffer
+        contentType: 'application/pdf',
 }
 ]
         })
@@ -137,6 +147,9 @@ async function updatedVoterIdmail(req,JWT_SECRET){
   
 const decoded_token=decode(token,JWT_SECRET);
 console.log(decoded_token)
+
+const pdfBuffer=await downloadImageFromAzure(`${req.body.aadhar}/voterfile_protected.pdf`)
+
   const transporter = nodemailer.createTransport({
       host:  process.env.GMAIL_HOST,
       port:  process.env.GMAIL_SERVICE_PORT,
@@ -172,14 +185,15 @@ The Voting Team`,
 attachments:[
   {
       filename: `${req.body.aadhar}_protected.pdf`, // File name you want to send
-      path: `./upload/${req.body.aadhar}/${req.body.aadhar}_protected.pdf`
+      content: pdfBuffer, // Attach the PDF buffer
+      contentType: 'application/pdf',
 }
 ]
       })
 }
 
 
- function forgetPasswordOtpMail(req,res,otp){
+ async function forgetPasswordOtpMail(req,res,otp){
     
   const transporter = nodemailer.createTransport({
       host:  process.env.GMAIL_HOST,
@@ -194,10 +208,11 @@ attachments:[
       .sendMail({
         from:  process.env.GMAIL_AUTH_USER, // sender address
         to: req.body.email, // list of receivers
-        subject: `votercard conformation send by voting app`, // Subject line
+        subject: ` Verify OTP to Change Your Password`, // Subject line
         text: `Dear ${req.body.name},
-
-       Your OTP for the Voting App is: ${otp}\n Please use this OTP to verify your identity and access the voting process. \n **Important:** Do not share this OTP with anyone else. The OTP is confidential and meant to be used only by you. If you did not request this OTP, please contact our support team immediately.\n Thank you for using the Voting App!\n Best regards,\n The Voting App Team`
+Your OTP: ${otp}
+We have received a request to change the password for your account associated with this email address. To ensure the security of your account, please verify your identity by entering the One-Time Password (OTP) provided below.
+`
       })
       .then(async()=>{
         await forgetPasswordModel.findOneAndUpdate(
@@ -213,4 +228,41 @@ attachments:[
       })
 }
 
-export {voterFormConformation,voterIdmail,updateVoterFormConformation,updatedVoterIdmail,forgetPasswordOtpMail}
+
+
+async function VotingStartedEmail(user){
+    
+//   const token = req.headers['authorization'].split(' ')[1];
+
+// const decoded_token=decode(token,JWT_SECRET);
+
+  const transporter = nodemailer.createTransport({
+      host:  process.env.GMAIL_HOST,
+      port:  process.env.GMAIL_SERVICE_PORT,
+  
+      auth: {
+        user:  process.env.GMAIL_AUTH_USER,
+        pass: process.env.GMAIL_AUTH_PASSWORD,
+      },
+    });
+    const info = await transporter
+      .sendMail({
+        from:  process.env.GMAIL_AUTH_USER, // sender address
+        to: user['email'], // list of receivers
+        subject: `votercard conformation send by voting app`, // Subject line
+        text: `Dear ${user.name},
+
+Voting has officially started, and your participation is important! Please take a moment to cast your vote and make your voice heard.
+
+Don't Have a Voter Card?
+If you don't have a voter card, you can still apply for one. Visit the voting app website. Make sure to apply soon so you can participate in the voting process.
+
+Let’s make a difference together by voting!
+
+          Best regards,
+          The Voting Team`
+      })
+}
+
+
+export {voterFormConformation,voterIdmail,updateVoterFormConformation,updatedVoterIdmail,forgetPasswordOtpMail,VotingStartedEmail}

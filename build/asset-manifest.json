@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.ce88e77d.css",
-    "main.js": "/static/js/main.a53a0fc2.js",
+    "main.js": "/static/js/main.ae6390ed.js",
     "static/media/slide6.jpg": "/static/media/slide6.1898dd19942cef2b6a9e.jpg",
     "static/media/slide5.jpg": "/static/media/slide5.63c7b531a648e6563364.jpg",
     "static/media/slide7.jpg": "/static/media/slide7.f1175a723816ebf6fd31.jpg",
@@ -28,10 +28,10 @@
     "index.html": "/index.html",
     "static/media/Indian_National_Congress-logo.webp": "/static/media/Indian_National_Congress-logo.249c6efa0bc78bb7de01.webp",
     "main.ce88e77d.css.map": "/static/css/main.ce88e77d.css.map",
-    "main.a53a0fc2.js.map": "/static/js/main.a53a0fc2.js.map"
+    "main.ae6390ed.js.map": "/static/js/main.ae6390ed.js.map"
   },
   "entrypoints": [
     "static/css/main.ce88e77d.css",
-    "static/js/main.a53a0fc2.js"
+    "static/js/main.ae6390ed.js"
   ]
 }

@@ -4,20 +4,19 @@ import { userModel, usersignupModel,otpModel, VotercardModel, forgetPasswordMode
 const router = express.Router();
 import nodemailer from "nodemailer";
 import otpgenerator from "otp-generator";
-import mongoose from "mongoose";
-import { raw } from "mysql";
 import jwt from 'jsonwebtoken'
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 import Jimp from 'jimp'
 import axios from 'axios'
-import { exec } from 'child_process'
+
 import Tesseract from "tesseract.js";
 import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
 import pdfgenerater from "./pdfgen.js";
-import { forgetPasswordOtpMail, updatedVoterIdmail, updateVoterFormConformation, voterFormConformation, voterIdmail } from "./emailcontroller.js";
+import { forgetPasswordOtpMail, updatedVoterIdmail, updateVoterFormConformation, voterFormConformation, voterIdmail, VotingStartedEmail } from "./emailcontroller.js";
+import { deleteFolderInContainer, downloadImageFromAzure, encryptFileAndStore, streamToBuffer, uploadFileToAzure } from "./fileupload.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,7 +27,7 @@ const adminPassword=process.env.ADMIN_PASSWORD;
 
 // JWT verification middleware
 function authenticateToken(req, res, next) {
-
+//  console.log(req.body)
   const authHeader = req.headers['authorization'];
  
   const token = authHeader && authHeader.split(' ')[1]; // Extract the token from 'Bearer <token>'
@@ -136,7 +135,7 @@ Your OTP for the Voting App is: ${otp}\n Please use this OTP to verify your iden
   }
 
   if(req.body.data){
-  const user = new usersignupModel(req.body.signupData);
+  const user =  new usersignupModel(req.body.signupData);
    user.save().then(()=>res.status(200).send({message:"success"}))
    .catch((err)=>res.status(500).send({message:err}))
   }
@@ -200,35 +199,34 @@ const createDirectory = (dir) => {
   }
 };
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
 
-    const uniqueKey = req.body.aadhar; // Assuming the unique key is sent in the form data
-    const uploadPath = path.join(__dirname, 'upload', uniqueKey);
-
-    createDirectory(uploadPath);
-
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    // const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    cb(null, file.originalname)
-  }
-})
-
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage })
 
 
-async function convertImageToGrayscale(inputImagePath, outputImagePath) {
+async function convertImageToGrayscale(blobName, grayscaleBlobName) {
   
-  const image = await Jimp.read(inputImagePath);
-   image.grayscale().write(outputImagePath);
-   // Set the global path to the grayscale image
+  try {
+    // Step 1: Download the image from Azure Blob Storage
+    const imageBuffer = await downloadImageFromAzure(blobName);
+
+    // Step 2: Load the image into Jimp and apply grayscale filter
+    const image = await Jimp.read(imageBuffer);
+    image.grayscale();
+
+    // Step 3: Convert the processed image back to a buffer
+    const grayscaleImageBuffer = await image.getBufferAsync(Jimp.MIME_JPEG);
+
+    // Step 4: Upload the grayscale image back to Azure Blob Storage
+    await uploadFileToAzure(grayscaleImageBuffer,grayscaleBlobName);
+  } catch (error) {
+    console.error('Error processing image:', error);
+  }
 }
 
 
 
-async function downloadImage(url, dest,writer) {
+async function downloadImage(url, req) {
   try {
       // Make a GET request to the image URL with responseType set to 'stream'
       const response = await axios({
@@ -237,29 +235,19 @@ async function downloadImage(url, dest,writer) {
           responseType: 'stream',
       });
 
-      // Create a writable stream to save the image
-     
-
-      // Pipe the response data to the file stream
-     
-        response.data.pipe(writer);
     
-    
-
-      // Return a promise that resolves when the file is fully written
-      return new Promise((resolve, reject) => {
-          writer.on('finish', resolve);
-          writer.on('error', reject);
-      });
+     const downloadedImageBuffer = await streamToBuffer(response.data);
+   await uploadFileToAzure(downloadedImageBuffer,`${req.body.aadhar}/qrcode.png`) 
   } catch (error) {
       console.error(`Error downloading image: ${error.message}`);
   }
 }
 
-async function extractAadharNumber_dob(imagePath) {
+async function extractAadharNumber_dob(blobName) {
   try {
+    const imageBuffer = await downloadImageFromAzure(blobName);
     // Perform OCR using Tesseract on the original image
-    const { data: { text } } = await Tesseract.recognize(imagePath, 'eng', {
+    const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
       tessedit_char_whitelist: '0123456789',
     });
 
@@ -277,12 +265,7 @@ async function extractAadharNumber_dob(imagePath) {
       return [optionaadhar,dobMatch]
     }
     else return ['', '']
-    // if (aadharNumber && dobMatch) {
-    //   console.log(`Extracted Aadhaar Number: ${aadharNumber[0]}`);
-    //   return [aadharNumber,dobMatch];
-    // } else {
-    //   console.log('Aadhaar number not found');
-    // }
+
   } catch (error) {
     console.error('Error extracting Aadhaar number:', error);
   }
@@ -296,63 +279,80 @@ router.post("/votercard",authenticateToken,useroradmin, upload.fields([{name:'pi
 if(voter){
  return res.status(400).send({message:"voter is already exist"})
 }
- console.log(req.body)
+ 
+
+ const picfile=req.files['picfile'][0]
+const aadharfile=req.files['address_proof'][0]
+console.log(picfile)
+    const blobName1 = path.join( req.body.aadhar, picfile.originalname).replace(/\\/g, '/');
+    const blobName2 = path.join( req.body.aadhar, aadharfile.originalname).replace(/\\/g, '/');
+
+    const originalBlobPicfileName = `${req.body.aadhar}/${picfile.originalname}`;  
+const grayscaleBlobPicfileName = `${req.body.aadhar}/bnw/${picfile.originalname}`;
+
+const originalBlobAadharfileName = `${req.body.aadhar}/${aadharfile.originalname}`;  
+const grayscaleBlobAadharfileName = `${req.body.aadhar}/bnw/${aadharfile.originalname}`;
+
+try{
+    await uploadFileToAzure(picfile.buffer, blobName1);
+    await uploadFileToAzure(aadharfile.buffer, blobName2);
+
+await convertImageToGrayscale(originalBlobPicfileName,grayscaleBlobPicfileName)
+await convertImageToGrayscale(originalBlobAadharfileName,grayscaleBlobAadharfileName)
+}
+catch{
+  return res.status(500).send({message:"internal server error or network connection error"})
+}
 
 
-
-convertImageToGrayscale("./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0]['filename']}`,"./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['picfile'][0]['filename']}`)
-convertImageToGrayscale("./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0]['filename']}`,"./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['address_proof'][0]['filename']}`)
+  const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
 
 
-const extracted_aadharNo_dob=await extractAadharNumber_dob("./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['address_proof'][0]['filename']}`)
-
-
-//console.log(extracted_aadharNo_dob[0][0],','+extracted_aadharNo_dob[1][0])
 try{
 const split_dob=extracted_aadharNo_dob[1][0].split('/')
 const dob= split_dob[2].concat("-",split_dob[1],'-',split_dob[0])
 const aadhar=extracted_aadharNo_dob[0][0].split(' ').join('')
 
-// console.log(dob,","+aadhar)
-// console.log(req.body.dob,","+req.body.aadhar)
-if(aadhar!=req.body.aadhar )return res.status(400).send({message:"aadhar number is not match with aadhar document"})
-if(dob!=req.body.dob )return res.status(400).send({message:"dob is not match with aadhar document"})
+
+if(aadhar!=req.body.aadhar ){
+  deleteFolderInContainer(`${req.body.aadhar}`)
+  return res.status(400).send({message:"aadhar number is not match with aadhar document"})
+}
+if(dob!=req.body.dob ){
+  deleteFolderInContainer(`${req.body.aadhar}`)
+  return res.status(400).send({message:"dob is not match with aadhar document"})
+}
 }catch{
+  deleteFolderInContainer(`${req.body.aadhar}`)
   return res.status(400).send({message:"document is invalid"})
 }
+
 const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+"Name:"+req.body.name+" FatherName:"+req.body.fname+" DOB:"+req.body.dob+" Aadhar No:"+req.body.aadhar;
 
-const filepath="./upload/"+`${req.body.aadhar}`+"/"+"qrcode.png";
 
-const writer = fs.createWriteStream(filepath);
   const num=otpgen(7)
   let name=req.body.name.trim().substr(0,3).toUpperCase();
   const epic_no=name+num;
  
 
   req.body.epic_no=epic_no;
-  setTimeout(()=>{
-    downloadImage(imageurl,filepath,writer);
+ 
+  setTimeout(async()=>{
+  await   downloadImage(imageurl,req);
   },1000)
-
+  
   const subscriptionKey = process.env.TRANSLATE_SUBSCRIPTION_KEY; // Replace with your Azure subscription key
 const endpoint = process.env.TRANSLATE_ENDPOINT;
 
-// The target language for translation (Marathi - 'mr')
+
 const targetLanguage = 'mr';
 
-// const address=`${req.body.house_no}+" , "+${req.body.area}+" , "+${req.body.village}+" , "+${req.body.post_office}+" , "+${req.body.taluka}+" , "+${req.body.pincode}`;
-// // The text you want to translate
-// const textToTranslate = `${req.body.name}+"/"+${req.body.fname}+"/"+${address}`;
+
 
 const addresscon=req.body.house_no.concat(" , ",req.body.area," , ",req.body.village," , ",req.body.post_office," , ",req.body.taluka," , ",req.body.pincode);
 
 const textToTranslateCon=req.body.name.concat("/",req.body.fname,"/",addresscon,"/",req.body.assembly_name)
-// The request body
-// const requestBody = 
-//     {
-//         'Text': "hello good morning"
-//     }
+
 
 
 // Make the POST request to the Translator Text API
@@ -380,44 +380,33 @@ axios({
   // console.log('Translation:', response.data[0].translations[0].text);
   req.body.marathidata=response.data[0].translations[0].text;
 }).catch((err)=>{
+  deleteFolderInContainer(`${req.body.aadhar}`)
   return res.status(500).send({message:'server error'})
 })
 
-  setTimeout(()=>{
-    pdfgenerater(req)
+  setTimeout(async()=>{
+  await  pdfgenerater(req)
   },4000)
   
    const passdob=req.body.dob.split('-').join('')
-  const inputFile = "C:\\Users\\Avishkar kale\\Desktop\\backend\\upload\\"+`${req.body.aadhar}`+"\\"+`${req.body.aadhar}`+'.pdf';
-const outputFile = "C:\\Users\\Avishkar kale\\Desktop\\backend\\upload\\"+`${req.body.aadhar}`+"\\"+`${req.body.aadhar}_protected`+'.pdf';
-const userPassword = passdob;
-const ownerPassword = process.env.PDF_FILE_PROTECTION_OWNER_PASSWORD;
 
-// QPDF command to encrypt the PDF file
-const command = `qpdf --encrypt ${userPassword} ${ownerPassword} 256 -- "${inputFile}" "${outputFile}"`;
-
-
-setTimeout(() => {
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-        console.error(`Error encrypting PDF: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        return;
-    }
-    console.log(`PDF encrypted successfully! Output file: ${outputFile}`);
-  });
-}, 5000);
+ const userPassword = passdob;
+ const ownerPassword = process.env.PDF_FILE_PROTECTION_OWNER_PASSWORD;
 
 
 
 
-const Voter=new VotercardModel({
+setTimeout(async() => {
+   await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
+}, 8000);
+
+
+  
+
+const Voter= new VotercardModel({
   ...req.body,
-  picfile:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0]['filename']}`,
-  address_proof:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0]['filename']}`,
+  picfile:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0].originalname}`,
+  address_proof:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0].originalname}`,
   epic_no:epic_no
 })
 
@@ -425,10 +414,11 @@ Voter.save().then(()=>{
   voterFormConformation(req,JWT_SECRET)
   setTimeout(() => {
     voterIdmail(req,JWT_SECRET)
-  }, 8000);
- return res.status(200).send({message:"form submitted successfully"})
+  }, 12000);
+ return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
 })
 .catch((err)=>{
+  deleteFolderInContainer(`${req.body.aadhar}`)
 return res.send({message:err})
 })
 
@@ -460,10 +450,17 @@ router.post('/userheader',authenticateToken,async(req,res)=>{
 router.post("/downloadvotercard",authenticateToken,useroradmin,async(req,res)=>{
  const voter =  await VotercardModel.findOne({epic_no:req.body.epic_no})
  if(voter){
-   const file=`C:\\Users\\Avishkar kale\\Desktop\\backend\\upload\\${voter.aadhar}\\${voter.aadhar}.pdf`
-   
- 
- return res.download(file)
+  try{
+   const file= await downloadImageFromAzure(`${voter.aadhar}/voterfile.pdf`)
+   res.set({
+    'Content-Type': 'application/pdf', // Adjust MIME type based on the file
+    'Content-Disposition': `attachment; filename="voterfile.pdf"`, // Set the filename for download
+});
+ return res.send(file)
+  }
+  catch{
+    return res.status(500).send({message:"internal server error or network connection error"})
+  }
  }
  else return res.status(404).send({message:"Voter Not Found"})
 })
@@ -476,41 +473,58 @@ if(!voter){
 }
  console.log(req.body)
 
+ const picfile=req.files['picfile'][0]
+ const aadharfile=req.files['address_proof'][0]
+//  console.log(picfile)
+     const blobName1 = path.join( req.body.aadhar, picfile.originalname).replace(/\\/g, '/');
+     const blobName2 = path.join( req.body.aadhar, aadharfile.originalname).replace(/\\/g, '/');
+
+     const originalBlobPicfileName = `${req.body.aadhar}/${picfile.originalname}`;  
+     const grayscaleBlobPicfileName = `${req.body.aadhar}/bnw/${picfile.originalname}`;
+     
+     const originalBlobAadharfileName = `${req.body.aadhar}/${aadharfile.originalname}`;  
+     const grayscaleBlobAadharfileName = `${req.body.aadhar}/bnw/${aadharfile.originalname}`;
+
+try{
+     await uploadFileToAzure(picfile.buffer, blobName1);
+     await uploadFileToAzure(aadharfile.buffer, blobName2);
+ 
+    await convertImageToGrayscale(originalBlobPicfileName,grayscaleBlobPicfileName)
+    await convertImageToGrayscale(originalBlobAadharfileName,grayscaleBlobAadharfileName)
+}
+catch{
+  return res.status(500).send({message:"internal server error or network connection error"})
+}
 
 
-convertImageToGrayscale("./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0]['filename']}`,"./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['picfile'][0]['filename']}`)
-convertImageToGrayscale("./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0]['filename']}`,"./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['address_proof'][0]['filename']}`)
+const extracted_aadharNo_dob=await extractAadharNumber_dob(grayscaleBlobAadharfileName)
 
-
-const extracted_aadharNo_dob=await extractAadharNumber_dob("./upload/"+`${req.body.aadhar}`+"/bnw/"+`${req.files['address_proof'][0]['filename']}`)
-
-
-//console.log(extracted_aadharNo_dob[0][0],','+extracted_aadharNo_dob[1][0])
 try{
 const split_dob=extracted_aadharNo_dob[1][0].split('/')
 const dob= split_dob[2].concat("-",split_dob[1],'-',split_dob[0])
 const aadhar=extracted_aadharNo_dob[0][0].split(' ').join('')
 
-// console.log(dob,","+aadhar)
-// console.log(req.body.dob,","+req.body.aadhar)
-if(aadhar!=req.body.aadhar )return res.status(400).send({message:"aadhar number is not match with aadhar document"})
-if(dob!=req.body.dob )return res.status(400).send({message:"dob is not match with aadhar document"})
+
+if(aadhar!=req.body.aadhar ){
+  deleteFolderInContainer(`${req.body.aadhar}`)
+  return res.status(400).send({message:"aadhar number is not match with aadhar document"})
+}
+if(dob!=req.body.dob ){
+  deleteFolderInContainer(`${req.body.aadhar}`)
+  return res.status(400).send({message:"dob is not match with aadhar document"})
+}
 }catch{
+  deleteFolderInContainer(`${req.body.aadhar}`)
   return res.status(400).send({message:"document is invalid"})
 }
 const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+"Name:"+req.body.name+" FatherName:"+req.body.fname+" DOB:"+req.body.dob+" Aadhar No:"+req.body.aadhar;
 
-const filepath="./upload/"+`${req.body.aadhar}`+"/"+"qrcode.png";
 
-const writer = fs.createWriteStream(filepath);
-  // const num=otpgen(7)
-  // let name=req.body.name.trim().substr(0,3).toUpperCase();
-  // const epic_no=name+num;
  
 
 const epic_no=req.body.epic_no;
-  setTimeout(()=>{
-    downloadImage(imageurl,filepath,writer);
+  setTimeout(async()=>{
+  await  downloadImage(imageurl,req);
   },1000)
 
   const subscriptionKey = process.env.TRANSLATE_SUBSCRIPTION_KEY; // Replace with your Azure subscription key
@@ -519,18 +533,10 @@ const endpoint = process.env.TRANSLATE_ENDPOINT;
 // The target language for translation (Marathi - 'mr')
 const targetLanguage = 'mr';
 
-// const address=`${req.body.house_no}+" , "+${req.body.area}+" , "+${req.body.village}+" , "+${req.body.post_office}+" , "+${req.body.taluka}+" , "+${req.body.pincode}`;
-// // The text you want to translate
-// const textToTranslate = `${req.body.name}+"/"+${req.body.fname}+"/"+${address}`;
 
 const addresscon=req.body.house_no.concat(" , ",req.body.area," , ",req.body.village," , ",req.body.post_office," , ",req.body.taluka," , ",req.body.pincode);
 
 const textToTranslateCon=req.body.name.concat("/",req.body.fname,"/",addresscon,"/",req.body.assembly_name)
-// The request body
-// const requestBody = 
-//     {
-//         'Text': "hello good morning"
-//     }
 
 
 // Make the POST request to the Translator Text API
@@ -558,36 +564,25 @@ axios({
   // console.log('Translation:', response.data[0].translations[0].text);
   req.body.marathidata=response.data[0].translations[0].text;
 }).catch((err)=>{
+  deleteFolderInContainer(`${req.body.aadhar}`)
   return res.status(500).send({message:'server error'})
 })
 
-  setTimeout(()=>{
-    pdfgenerater(req)
+  setTimeout(async()=>{
+   await pdfgenerater(req)
   },4000)
   
    const passdob=req.body.dob.split('-').join('')
-  const inputFile = "C:\\Users\\Avishkar kale\\Desktop\\backend\\upload\\"+`${req.body.aadhar}`+"\\"+`${req.body.aadhar}`+'.pdf';
-const outputFile = "C:\\Users\\Avishkar kale\\Desktop\\backend\\upload\\"+`${req.body.aadhar}`+"\\"+`${req.body.aadhar}_protected`+'.pdf';
-const userPassword = passdob;
-const ownerPassword = process.env.PDF_FILE_PROTECTION_OWNER_PASSWORD;
-
-// QPDF command to encrypt the PDF file
-const command = `qpdf --encrypt ${userPassword} ${ownerPassword} 256 -- "${inputFile}" "${outputFile}"`;
-
-
-setTimeout(() => {
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-        console.error(`Error encrypting PDF: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        return;
-    }
-    console.log(`PDF encrypted successfully! Output file: ${outputFile}`);
-  });
-}, 5000);
+ 
+   const userPassword = passdob;
+   const ownerPassword = process.env.PDF_FILE_PROTECTION_OWNER_PASSWORD;
+  
+  
+  
+  
+  setTimeout(async() => {
+     await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
+  }, 8000);
 
 
 try{
@@ -595,8 +590,8 @@ await VotercardModel.findOneAndUpdate(
   {epic_no:req.body.epic_no},
   {
     ...req.body,
-    picfile:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0]['filename']}`,
-    address_proof:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0]['filename']}`,
+    picfile:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0].originalname}`,
+    address_proof:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0].originalname}`,
     epic_no:voter.epic_no
   },
   
@@ -608,10 +603,11 @@ updateVoterFormConformation(req,JWT_SECRET)
 setTimeout(() => {
 
   updatedVoterIdmail(req,JWT_SECRET)
-}, 8000);
-return res.status(200).send({message:"form submitted successfully"})
+}, 12000);
+return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
 }
 catch(err){
+  deleteFolderInContainer(`${req.body.aadhar}`)
  return res.send({message:err})
 }
 })
@@ -633,12 +629,7 @@ router.post("/uservote",authenticateToken,useroradmin,async (req,res)=>{
  
   if(voter){
     console.log("voter"+voter)
-//    voter.election.voting_data.map((e)=>{
-// //  console.log(e)
-//     if(e.epic_no==req.body.epic_no) {
-//       return  res.status(409).send({message:"user already vote"})
-//     }
-//     })
+
 const alreadyVoted = voter.election.voting_data.some(e => e.epic_no === req.body.epic_no);
    
 if (alreadyVoted) {
@@ -763,6 +754,15 @@ router.patch("/updateforgetpassword",async(req,res)=>{
   }catch{
     return res.status(500).send({message:"internal server error"})
   }
+})
+
+router.get('/votingstart',async(req,res)=>{
+const users=await usersignupModel.find({});
+ users.forEach(async user => {
+ await VotingStartedEmail(user)
+ });
+
+
 })
 
 export default router;
