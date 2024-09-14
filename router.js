@@ -611,7 +611,10 @@ setTimeout(() => {
 
   updatedVoterIdmail(req,JWT_SECRET)
 }, 15000);
-return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
+setTimeout(() => {
+  return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
+}, 4000);
+
 }
 catch(err){
   deleteFolderInContainer(`${req.body.aadhar}`)
