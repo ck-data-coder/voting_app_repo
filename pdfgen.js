@@ -4,7 +4,7 @@ import fs from 'fs';
 
 
 
-function pdfgenerater(req) {
+async function pdfgenerater(req) {
     
     const doc = new PDFDocument();
     
