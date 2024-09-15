@@ -245,12 +245,19 @@ async function downloadImage(url, req) {
 
 async function extractAadharNumber_dob(blobName) {
   try {
-    
+    const worker = await Tesseract.createWorker({
+      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.1.0/tesseract-core-simd.wasm',
+      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v2.1.0/dist/worker.min.js',
+       langPath: 'https://tessdata.projectnaptha.com/4.0.0_best/'
+    });
+    await worker.load();
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
     const imageBuffer = await downloadImageFromAzure(blobName);
     // Perform OCR using Tesseract on the original image
-    const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
+    const { data: { text } } = await worker.recognize(imageBuffer, 'eng', {
       tessedit_char_whitelist: '0123456789',
-      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.1.0/tesseract-core.wasm'
+      
     });
 
     // Use regex to find the Aadhaar number pattern (usually a 12-digit number)
