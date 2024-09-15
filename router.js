@@ -250,6 +250,7 @@ async function extractAadharNumber_dob(blobName) {
     // Perform OCR using Tesseract on the original image
     const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
       tessedit_char_whitelist: '0123456789',
+      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.1.0/tesseract-core.wasm'
     });
 
     // Use regex to find the Aadhaar number pattern (usually a 12-digit number)
