@@ -1,7 +1,10 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
+import path from 'path';
 import { downloadImageFromAzure, uploadFileToAzure } from './fileupload.js';
-
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 
@@ -25,13 +28,13 @@ async function pdfgenerater(req) {
   });
       
     // doc.pipe(fs.createWriteStream("./upload/"+`${req.body.aadhar}`+"/"+`${req.body.aadhar}`+'.pdf'));
-    const backgroundImagePath = './photos/voter.jpeg'; // Path to your background image
+    const backgroundImagePath =path.join(__dirname,'photos','voter.jpeg') ; // Path to your background image
     const backgroundWidth = 250; // Specify the desired width
     const backgroundHeight = 150; // Specify the desired height
     const xPos = 45; // X position where the background image starts
     const yPos = 100; // Y position where the background image starts
 
-    const backgroundfrontImagePath = './photos/back.jpg'; // Path to your background image
+    const backgroundfrontImagePath = path.join(__dirname,'photos','back.jpg') ; // Path to your background image
     const backgroundfrontWidth = 250; // Specify the desired width
     const backgroundfrontHeight = 150; // Specify the desired height
     const xPosfront = 330; // X position where the background image starts
@@ -106,8 +109,8 @@ async function pdfgenerater(req) {
    .stroke();
 
 
-        const logoPath_satyamev = './photos/satyamev-jayate.png'
-        const logoPath_eci = './photos/eci.png'
+        const logoPath_satyamev =path.join(__dirname,'photos','satyamev-jayate.png') 
+        const logoPath_eci = path.join(__dirname,'photos','eci.png') 
         
         const userDetails = {
           // number: '1234567890',
