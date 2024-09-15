@@ -488,6 +488,14 @@ if(!voter){
  return res.status(400).send({message:"voter not found"})
 }
  console.log(req.body)
+ const dirPath = path.join(__dirname, 'node_modules/tesseract.js-core');
+ fs.readdir(dirPath, (err, files) => {
+   if (err) {
+     console.log('Error reading directory');
+   } else {
+     console.log(files);
+   }
+ });
 
  const picfile=req.files['picfile'][0]
  const aadharfile=req.files['address_proof'][0]
