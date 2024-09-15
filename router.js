@@ -245,17 +245,10 @@ async function downloadImage(url, req) {
 
 async function extractAadharNumber_dob(blobName) {
   try {
-    const worker = await Tesseract.createWorker({
-      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.1.0/tesseract-core-simd.wasm',
-      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v2.1.0/dist/worker.min.js',
-       langPath: 'https://tessdata.projectnaptha.com/4.0.0_best/'
-    });
-    await worker.load();
-    await worker.loadLanguage('eng');
-   // await worker.initialize('eng');
+  
     const imageBuffer = await downloadImageFromAzure(blobName);
     // Perform OCR using Tesseract on the original image
-    const { data: { text } } = await worker.recognize(imageBuffer, 'eng', {
+    const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
       tessedit_char_whitelist: '0123456789',
       
     });
@@ -488,14 +481,7 @@ if(!voter){
  return res.status(400).send({message:"voter not found"})
 }
  console.log(req.body)
- const dirPath = path.join(__dirname, 'node_modules/tesseract.js-core');
- fs.readdir(dirPath, (err, files) => {
-   if (err) {
-     console.log('Error reading directory');
-   } else {
-     console.log(files);
-   }
- });
+ 
 
  const picfile=req.files['picfile'][0]
  const aadharfile=req.files['address_proof'][0]
