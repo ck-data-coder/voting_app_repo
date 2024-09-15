@@ -245,6 +245,7 @@ async function downloadImage(url, req) {
 
 async function extractAadharNumber_dob(blobName) {
   try {
+    
     const imageBuffer = await downloadImageFromAzure(blobName);
     // Perform OCR using Tesseract on the original image
     const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
@@ -418,8 +419,11 @@ Voter.save().then(()=>{
   setTimeout(() => {
     voterIdmail(req,JWT_SECRET)
  
- return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 15000);
+
+}, 20000);
+setTimeout(() => {
+  return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
+}, 12000);
 })
 .catch((err)=>{
   deleteFolderInContainer(`${req.body.aadhar}`,req.files)
@@ -611,11 +615,13 @@ updateVoterFormConformation(req,JWT_SECRET)
 setTimeout(() => {
 
   updatedVoterIdmail(req,JWT_SECRET)
+ console.log("message sent")
 
-
+  
+}, 20000);
+setTimeout(() => {
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 15000);
-
+}, 12000);
 }
 catch(err){
   deleteFolderInContainer(`${req.body.aadhar}`,req.files)
