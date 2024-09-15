@@ -252,7 +252,7 @@ async function extractAadharNumber_dob(blobName) {
     });
     await worker.load();
     await worker.loadLanguage('eng');
-    await worker.initialize('eng');
+   // await worker.initialize('eng');
     const imageBuffer = await downloadImageFromAzure(blobName);
     // Perform OCR using Tesseract on the original image
     const { data: { text } } = await worker.recognize(imageBuffer, 'eng', {
