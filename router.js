@@ -421,10 +421,10 @@ Voter.save().then(()=>{
     voterIdmail(req,JWT_SECRET)
  
 
-}, 20000);
+}, 10000);
 setTimeout(() => {
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 12000);
+}, 15000);
 })
 .catch((err)=>{
   deleteFolderInContainer(`${req.body.aadhar}`,req.files)
@@ -624,10 +624,10 @@ setTimeout(() => {
  console.log("message sent")
 
   
-}, 20000);
+}, 10000);
 setTimeout(() => {
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 10000);
+}, 15000);
 
 
 }
