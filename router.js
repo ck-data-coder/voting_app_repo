@@ -342,9 +342,9 @@ const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="
 
   req.body.epic_no=epic_no;
  
-  setTimeout(async()=>{
+ 
     await downloadImage(imageurl,req);
-  },1000)
+
   
   const subscriptionKey = process.env.TRANSLATE_SUBSCRIPTION_KEY; // Replace with your Azure subscription key
 const endpoint = process.env.TRANSLATE_ENDPOINT;
@@ -361,7 +361,7 @@ const textToTranslateCon=req.body.name.concat("/",req.body.fname,"/",addresscon,
 
 
 // Make the POST request to the Translator Text API
-axios({
+await axios({
   baseURL: endpoint,
   url: '/translate',
   method: 'post',
@@ -391,7 +391,7 @@ axios({
 
   setTimeout(async()=>{
   await  pdfgenerater(req)
-  },8000)
+  },1000)
   
    const passdob=req.body.dob.split('-').join('')
 
@@ -403,7 +403,7 @@ axios({
 
 setTimeout(async() => {
    await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
-}, 12000);
+}, 5000);
 
 
   
@@ -537,9 +537,9 @@ const imageurl= "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="
  
 
 const epic_no=req.body.epic_no;
-  setTimeout(async()=>{
+
   await  downloadImage(imageurl,req);
-  },1000)
+ 
 
   const subscriptionKey = process.env.TRANSLATE_SUBSCRIPTION_KEY; // Replace with your Azure subscription key
 const endpoint = process.env.TRANSLATE_ENDPOINT;
@@ -554,7 +554,7 @@ const textToTranslateCon=req.body.name.concat("/",req.body.fname,"/",addresscon,
 
 
 // Make the POST request to the Translator Text API
-axios({
+ await axios({
   baseURL: endpoint,
   url: '/translate',
   method: 'post',
@@ -582,9 +582,11 @@ axios({
   return res.status(500).send({message:'server error'})
 })
 
-  setTimeout(async()=>{
-   await pdfgenerater(req)
-  },8000)
+setTimeout(async() => {
+  await pdfgenerater(req)
+}, 1000);
+ 
+ 
   
    const passdob=req.body.dob.split('-').join('')
  
@@ -594,9 +596,11 @@ axios({
   
   
   
-  setTimeout(async() => {
-     await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
-  }, 12000);
+ setTimeout(async() => {
+  await encryptFileAndStore(`${req.body.aadhar}/voterfile.pdf`,`${req.body.aadhar}/voterfile_protected.pdf`,userPassword,ownerPassword)
+ }, 5000);
+    
+ 
 
 
 try{
@@ -623,7 +627,9 @@ setTimeout(() => {
 }, 20000);
 setTimeout(() => {
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 12000);
+}, 10000);
+
+
 }
 catch(err){
   deleteFolderInContainer(`${req.body.aadhar}`,req.files)
