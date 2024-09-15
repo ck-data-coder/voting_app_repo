@@ -62,7 +62,7 @@ async function pdfgenerater(req) {
     .stroke();    
    
 
-    doc.registerFont('MarathiFont', './fonts/AnekDevanagari-VariableFont_wdth,wght.ttf');
+    doc.registerFont('MarathiFont', path.join(__dirname,"fonts","AnekDevanagari-VariableFont_wdth,wght.ttf"));
    
    
     doc.fontSize(9).font('MarathiFont').text("कृपया नोंद घ्यावी / Kindly note that",250,540,{width:550})
