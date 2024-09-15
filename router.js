@@ -281,7 +281,7 @@ router.post("/votercard",authenticateToken,useroradmin, upload.fields([{name:'pi
 if(voter){
  return res.status(400).send({message:"voter is already exist"})
 }
- 
+ console.log(req.body)
 
  const picfile=req.files['picfile'][0]
 const aadharfile=req.files['address_proof'][0]
