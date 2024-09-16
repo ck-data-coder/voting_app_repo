@@ -689,7 +689,7 @@ router.post("/verifyepic_no",authenticateToken,useroradmin,async (req,res)=>{
 })
 
 
-router.get("/displayresult",async (req,res)=>{
+router.get("/displayresult",authenticateToken,useroradmin,async (req,res)=>{
   const data = await userModel.aggregate([
     { $unwind: "$election.voting_data" }, // Flatten the voting_data array
     {
@@ -806,7 +806,7 @@ router.post('/puttargettimeelectionandresult',async (req,res)=>{
   )
   return res.send({message:"success"})
 }catch{
-  return res.send({message:'error'})
+  return res.status(400).send({message:'error'})
 }
 })
 
@@ -836,7 +836,7 @@ router.delete('/removetargettime',async(req,res)=>{
   )
   return res.send({message:"success"})
 }catch{
-  return res.send({message:'error'})
+  return res.status(400).send({message:'error'})
 }
 })
 
@@ -852,7 +852,7 @@ router.post('/settimecalToDisplayElectionButton',async(req,res)=>{
   )
   return res.send({message:"success"})
 }catch{
-  return res.send({message:'error'})
+  return res.status(400).send({message:'error'})
 }
 })
 
@@ -868,7 +868,7 @@ router.post('/setelection',async(req,res)=>{
   )
   return res.send({message:"success"})
 }catch{
-  return res.send({message:'error'})
+  return res.status(400).send({message:'error'})
 }
 })
 
@@ -895,7 +895,7 @@ router.post('/setresult',async(req,res)=>{
   )
   return res.send({message:"success"})
 }catch{
-  return res.send({message:'error'})
+  return res.status(400).send({message:'error'})
 }
 })
 
@@ -906,7 +906,7 @@ router.get('/getresult',async(req,res)=>{
  else return res.send(null)
   }
   catch{
-    return res.send("error")
+    return res.status(400).send("error")
   }
 })
 
