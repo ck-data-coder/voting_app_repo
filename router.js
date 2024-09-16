@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from 'dotenv'
-import { userModel, usersignupModel,otpModel, VotercardModel, forgetPasswordModel } from "./model.js";
+import { userModel, usersignupModel,otpModel, VotercardModel, forgetPasswordModel, electionModel } from "./model.js";
 const router = express.Router();
 import nodemailer from "nodemailer";
 import otpgenerator from "otp-generator";
@@ -782,12 +782,132 @@ router.patch("/updateforgetpassword",async(req,res)=>{
 })
 
 router.get('/votingstart',async(req,res)=>{
+  try{
 const users=await usersignupModel.find({});
  users.forEach(async user => {
  await VotingStartedEmail(user)
  });
+return res.send({message:"success"})
+  }
+  catch{
+    return res.status(400).send({message:'error'})
+  }
+})
 
+router.post('/puttargettimeelectionandresult',async (req,res)=>{
+  try{
+  await electionModel.findOneAndUpdate(
+    {id:1},
+    {
+      ...req.body
+    },
+    
+    {upsert:true,new:true,setDefaultsOnInsert:true}
+  )
+  return res.send({message:"success"})
+}catch{
+  return res.send({message:'error'})
+}
+})
 
+router.get('/gettargettime',async(req,res)=>{
+  console.log("hello")
+  try{
+    const time=await electionModel.findOne({id:1})
+    if(time.targettime){ 
+      console.log("target"+time)
+      return res.send(time.targettime);}
+    else return res.status(400).send(null)
+    }
+    catch{
+      return res.status(400).send("error")
+    }
+})
+
+router.delete('/removetargettime',async(req,res)=>{
+  try{
+  await electionModel.findOneAndUpdate(
+    {id:1},
+    {
+      targettime:null
+    },
+    
+    {upsert:true,new:true,setDefaultsOnInsert:true}
+  )
+  return res.send({message:"success"})
+}catch{
+  return res.send({message:'error'})
+}
+})
+
+router.post('/settimecalToDisplayElectionButton',async(req,res)=>{
+  try{
+  await electionModel.findOneAndUpdate(
+    {id:1},
+    {
+      timecalToDisplayElectionButton:req.body.timecalToDisplayElectionButton
+    },
+    
+    {upsert:true,new:true,setDefaultsOnInsert:true}
+  )
+  return res.send({message:"success"})
+}catch{
+  return res.send({message:'error'})
+}
+})
+
+router.post('/setelection',async(req,res)=>{
+  try{
+  await electionModel.findOneAndUpdate(
+    {id:1},
+    {
+      election:req.body.election
+    },
+    
+    {upsert:true,new:true,setDefaultsOnInsert:true}
+  )
+  return res.send({message:"success"})
+}catch{
+  return res.send({message:'error'})
+}
+})
+
+router.get('/gettimecalToDisplayElectionButton',async(req,res)=>{
+  try{
+  const time=await electionModel.findOne({id:1})
+ if (time.timecalToDisplayElectionButton) return res.send(time.timecalToDisplayElectionButton);
+ else return res.status(400).send(null)
+  }
+  catch{
+    return res.status(400).send("error")
+  }
+})
+
+router.post('/setresult',async(req,res)=>{
+  try{
+  await electionModel.findOneAndUpdate(
+    {id:1},
+    {
+      result:req.body.result
+    },
+    
+    {upsert:true,new:true,setDefaultsOnInsert:true}
+  )
+  return res.send({message:"success"})
+}catch{
+  return res.send({message:'error'})
+}
+})
+
+router.get('/getresult',async(req,res)=>{
+  try{
+  const time=await electionModel.findOne({id:1})
+ if (time) return res.send(time.result);
+ else return res.send(null)
+  }
+  catch{
+    return res.send("error")
+  }
 })
 
 export default router;

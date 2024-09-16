@@ -172,9 +172,34 @@ const forgetPasswordSchema=new schema({
     versionKey:false
 })
 
+const electionSchema=new schema({
+    id:{
+        type:String
+    },
+    targettime:{
+        type:String
+       
+    },
+    timecalToDisplayElectionButton:{
+        type:String
+    },
+    election:{
+        type:String
+    },
+    result:{
+        type:String
+    }
+},
+{
+    versionKey:false
+})
+
+
 const otpModel=mongoose.model('otpdata',otpSchema)
 const VotercardModel=mongoose.model('VotercardData',VotercardData)
 const userModel=mongoose.model('votingDatas',userSchema)
 const usersignupModel=mongoose.model('userdata',userSignupSchema)
 const forgetPasswordModel=mongoose.model('forgetPassword',forgetPasswordSchema)
-export { userModel,usersignupModel,otpModel,VotercardModel,forgetPasswordModel};
+const electionModel=mongoose.model('electiontime',electionSchema)
+
+export { userModel,usersignupModel,otpModel,VotercardModel,forgetPasswordModel,electionModel};
