@@ -811,7 +811,7 @@ router.post('/puttargettimeelectionandresult',async (req,res)=>{
 })
 
 router.get('/gettargettime',async(req,res)=>{
-  console.log("hello")
+
   try{
     const time=await electionModel.findOne({id:1})
     if(time.targettime){ 
