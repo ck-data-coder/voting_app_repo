@@ -147,6 +147,10 @@ const VotercardData=new schema({
     picfile:{
         type:String,
         require:true
+    },
+    time:{
+        type:String,
+        require:true
     }
 },
 {

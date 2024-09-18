@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 
 async function pdfgenerater(req) {
+  try{
   const picfile=req.files['picfile'][0]
   const picfileBuffer = await downloadImageFromAzure(`${req.body.aadhar}/${picfile.originalname}`)
   const picfilegrayBuffer = await downloadImageFromAzure(`${req.body.aadhar}/bnw/${picfile.originalname}`)
@@ -240,6 +241,10 @@ doc.fontSize(9).text(userDetails.epic_no,360,210)
   .text(`Assembly Number:                                                ${userDetails.assemblyNumber}`, 220, 440);
 
     doc.end();
+      }
+      catch{
+ console.log('error while generating pdf');
+      }
 }
 
 export default pdfgenerater;

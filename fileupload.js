@@ -1,7 +1,8 @@
 import   {BlobServiceClient} from '@azure/storage-blob';
 import pkg from 'pdf-lib-plus-encrypt';
 const { PDFDocument } = pkg;
-
+import { promisify } from 'util';
+const sleep = promisify(setTimeout);
 import dotenv from 'dotenv'
 dotenv.config()
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
@@ -11,10 +12,14 @@ const containerClient = blobServiceClient.getContainerClient(containerName);
 
 const uploadFileToAzure = async (buffer, blobName) => {
     try {
-     
+      const uploadOptions = {
+        blobHTTPHeaders: {
+            blobCacheControl: 'no-cache'
+        }
+    };
       await containerClient.createIfNotExists(); // Ensure container exists
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-      await blockBlobClient.uploadData(buffer);  // Upload the file buffer to Azure Blob Storage
+      await blockBlobClient.uploadData(buffer,uploadOptions);  // Upload the file buffer to Azure Blob Storage
       console.log(`File uploaded to Azure Blob Storage as ${blobName}`);
     } catch (error) {
       console.error('Error uploading to Azure Blob Storage:', error);
@@ -31,14 +36,24 @@ const uploadFileToAzure = async (buffer, blobName) => {
   };
 
   async function downloadImageFromAzure(blobName) {
+    try{
     const blobClient = containerClient.getBlobClient(blobName);
     const downloadBlockBlobResponse = await blobClient.download();
     const downloadedImageBuffer = await streamToBuffer(downloadBlockBlobResponse.readableStreamBody);
     return downloadedImageBuffer;
+    }
+    catch(err){
+      console.error('Error downloading from Azure Blob Storage:', err);
+    }
   }
 
 async function encryptFileAndStore(pdfFileBlob,blobName,userPassword,ownerPassword){
   
+
+  await sleep(5000)
+  const blobClient = containerClient.getBlobClient(pdfFileBlob);
+  const blobExists = await blobClient.exists();
+  if (blobExists) {
 const pdfFile=await downloadImageFromAzure(pdfFileBlob)
 
 try {
@@ -65,10 +80,12 @@ const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 await blockBlobClient.uploadData(Buffer.from(pdfBytes));
 console.log(`PDF uploaded successfully to Azure as ${blobName}.`);
 }
+  
 catch (error) {
   console.error('Error during PDF encryption and upload:', error.message);
   throw error;
 }
+  }
 }
 
 
