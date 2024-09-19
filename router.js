@@ -488,10 +488,10 @@ router.put("/updatevotercard",authenticateToken,useroradmin, upload.fields([{nam
 if(!voter){
  return res.status(400).send({message:"voter not found"})
 }
-// if(Date.now()< +voter.time + 2*24*60*60*1000){
+if(Date.now()< +voter.time + 2*24*60*60*1000){
 
-//   return res.status(400).send({message:"user cannot update the voter card before 2 days of last update or registration"})
-// }
+  return res.status(400).send({message:"user cannot update the voter card before 2 days of last update or registration"})
+}
  console.log(req.body)
  
 
