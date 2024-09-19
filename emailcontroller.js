@@ -249,7 +249,7 @@ async function VotingStartedEmail(user){
       .sendMail({
         from:  process.env.GMAIL_AUTH_USER, // sender address
         to: user['email'], // list of receivers
-        subject: `votercard conformation send by voting app`, // Subject line
+        subject: `voting start message`, // Subject line
         text: `Dear ${user.name},
 
 Voting has officially started, and your participation is important! Please take a moment to cast your vote and make your voice heard.

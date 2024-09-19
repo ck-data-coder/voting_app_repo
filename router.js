@@ -419,23 +419,20 @@ try{
 
 
 
-const Voter= new VotercardModel({
+const Voter=  new VotercardModel({
   ...req.body,
   picfile:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['picfile'][0].originalname}`,
   address_proof:"./upload/"+`${req.body.aadhar}`+"/"+`${req.files['address_proof'][0].originalname}`,
   epic_no:epic_no
 })
 
-Voter.save().then(()=>{
-  voterFormConformation(req,JWT_SECRET)
-  setTimeout(() => {
-    voterIdmail(req,JWT_SECRET)
+ await Voter.save().then(async()=>{
+ await voterFormConformation(req,JWT_SECRET)
  
-
-}, 13000);
-setTimeout(() => {
+ await   voterIdmail(req,JWT_SECRET)
+ 
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 20000);
+
 })
 .catch(async(err)=>{
  await deleteFolderInContainer(`${req.body.aadhar}`,req.files)
@@ -491,10 +488,10 @@ router.put("/updatevotercard",authenticateToken,useroradmin, upload.fields([{nam
 if(!voter){
  return res.status(400).send({message:"voter not found"})
 }
-if(Date.now()< +voter.time + 2*24*60*60*1000){
+// if(Date.now()< +voter.time + 2*24*60*60*1000){
 
-  return res.status(400).send({message:"user cannot update the voter card before 2 days of last update or registration"})
-}
+//   return res.status(400).send({message:"user cannot update the voter card before 2 days of last update or registration"})
+// }
  console.log(req.body)
  
 
@@ -634,18 +631,12 @@ await VotercardModel.findOneAndUpdate(
 )
 
 
-updateVoterFormConformation(req,JWT_SECRET)
-setTimeout(() => {
+await updateVoterFormConformation(req,JWT_SECRET)
 
-  updatedVoterIdmail(req,JWT_SECRET)
+
+ await updatedVoterIdmail(req,JWT_SECRET)
  console.log("message sent")
-
-  
-}, 13000);
-setTimeout(() => {
   return res.status(200).send({message:"form submitted successfully,voter card will be mailed in 2 min"})
-}, 20000);
-
 
 }
 catch(err){
