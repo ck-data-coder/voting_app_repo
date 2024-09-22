@@ -669,7 +669,7 @@ if (alreadyVoted) {
   return res.status(409).send({ message: "user already voted" });
 }
 
-   return  userModel.updateOne(
+   return await  userModel.updateOne(
       { "election.time": time}, // Query to find the document
       { $push: { "election.voting_data": {...req.body,voter_name:user.name}} } // Update operation to add the new hobby
     ).then((result)=>{
