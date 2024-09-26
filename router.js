@@ -682,7 +682,7 @@ if (alreadyVoted) {
   }
 
   const userVote = new userModel({election:{time:time,voting_data:{...req.body,voter_name:user.name}}});
-  userVote.save().then(()=>res.status(200).send({message:"vote successful"}))
+ await  userVote.save().then(()=>res.status(200).send({message:"vote successful"}))
   .catch((err)=>{ console.log(err)
     return res.status(500).send({message:"internal server error"})})
 })
