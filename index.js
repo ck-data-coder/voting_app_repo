@@ -1,4 +1,19 @@
 
+
+import { execSync } from "child_process";
+
+console.log("Node version:", process.version);
+
+try {
+    console.log(
+        execSync("npm ls jsonwebtoken jws jwa buffer-equal-constant-time", {
+            encoding: "utf8"
+        })
+    );
+} catch (error) {
+    console.log("Dependency inspection:", error.stdout);
+}
+
 import express from 'express'
 import './database.js'
 import cors from 'cors'
