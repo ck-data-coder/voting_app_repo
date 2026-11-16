@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "engines": {
-  "node": "26.x"
+    "node": "26.x"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -19,6 +19,7 @@
     "@azure/ms-rest-js": "^2.7.0",
     "@azure/storage-blob": "^12.24.0",
     "axios": "^1.7.5",
+    "bcrypt": "^6.0.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

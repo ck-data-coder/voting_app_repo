@@ -10,7 +10,7 @@ import fs from "fs";
 import path from "path";
 import Jimp from 'jimp'
 import axios from 'axios'
-
+import bcrypt from "bcrypt";
 import Tesseract from "tesseract.js";
 import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
@@ -67,13 +67,32 @@ router.get("/userauth",authenticateToken,useroradmin,(req,res)=>{
  return res.status(200)
 })
 
+router.get("/landingpage", authenticateToken, async (req, res) => {
+    try {
+        // Check whether the authenticated account is a registered user
+        const user = await usersignupModel.findOne({
+            email: req.user.email
+        });
 
-router.get("/landingpage",authenticateToken,async (req,res)=>{
-  const user = await usersignupModel.findOne({ email: req.user.email });
-  if(user)return res.json({data:'user'})
-    else if(req.user.email==adminEmail && req.user.password==adminPassword)return res.json({data:'admin'})
-  else return res.json({data:null})
-})
+        if (user) {
+            return res.json({ data: "user" });
+        }
+
+        // Check whether the authenticated account is admin
+        if (req.user.email === adminEmail) {
+            return res.json({ data: "admin" });
+        }
+
+        return res.json({ data: null });
+
+    } catch (err) {
+        console.error("Landing page error:", err);
+
+        return res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+});
 
 
 router.post("/signup", async (req, res) => {
@@ -135,27 +154,53 @@ Your OTP for the Voting App is: ${otp}\n Please use this OTP to verify your iden
     else return res.status(403).send({ message: "otp is incorrect" });
   }
 
-  if(req.body.data){
-  const user =  new usersignupModel(req.body.signupData);
-   user.save().then(()=>res.status(200).send({message:"success"}))
-   .catch((err)=>res.status(500).send({message:err}))
-  }
+
+
+if (req.body.data) {
+    try {
+        const signupData = req.body.signupData;
+
+        const hashedPassword = await bcrypt.hash(signupData.password, 12);
+
+        const user = new usersignupModel({
+            ...signupData,
+            password: hashedPassword
+        });
+
+        await user.save();
+
+        return res.status(200).send({ message: "success" });
+
+    } catch (err) {
+        return res.status(500).send({ message: "Signup failed" });
+    }
+}
 });
 
-router.get("/admin",authenticateToken, async (req, res) => {
- 
-  if(req.user.email==adminEmail && req.user.password==adminPassword){
-  
-    return res.status(200)
-  
-}
+router.get("/admin", authenticateToken, async (req, res) => {
+    try {
+        if (req.user.email !== adminEmail) {
+            return res.status(400).send({
+                message: "Admin access required"
+            });
+        }
 
-else return res.status(400).send({message:"login as a Admin"})
+        return res.status(200).send({
+            message: "Admin authenticated"
+        });
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).send({
+            message: "Internal server error"
+        });
+    }
 });
 
 router.get("/voterdata",authenticateToken, async (req, res) => {
  
-  if(req.user.email==adminEmail && req.user.password==adminPassword){
+  if(req.user.email==adminEmail){
   return res.json(
   
     await userModel.find()
@@ -165,32 +210,71 @@ router.get("/voterdata",authenticateToken, async (req, res) => {
 
 
 router.post("/login", async (req, res) => {
-  if(req.body.user=='user'){
-  const user = await usersignupModel.findOne({ email: req.body.loginData.email });
-  if (user) {
-    if (user.password == req.body.loginData.password){
-      const token = jwt.sign({ email: req.body.loginData.email,password:req.body.loginData.password }, JWT_SECRET);
-      return res.status(200).send({ message: "user login successful", token:token });
-    
-    }
-    else return res.status(401).send({ message: "password is incorrect" });
-  }
-  return res.status(400).send({ message: "user not found" });
-}
+    try {
+        const { user: userType, loginData } = req.body;
+        const { email, password } = loginData || {};
 
-else if(req.body.user=='admin'){
-  if(req.body.loginData.email==adminEmail){
-    if(req.body.loginData.password==adminPassword){
-      const token = jwt.sign({ email: req.body.loginData.email,password:req.body.loginData.password }, JWT_SECRET);
-      return res.status(200).send({ message: "admin login successful", token:token });
-    }
-    else return res.status(401).send({ message: "password is incorrect" });
+        if (!email || !password) {
+            return res.status(400).send({ message: "Email and password are required" });
+        }
 
-  }
-  return res.status(400).send({ message: "admin not found" });
-}
+        // USER LOGIN
+        if (userType === "user") {
+            const user = await usersignupModel.findOne({ email });
+
+            if (!user) {
+                return res.status(400).send({ message: "User not found" });
+            }
+
+            const isMatch = await bcrypt.compare(password, user.password);
+
+            if (!isMatch) {
+                return res.status(401).send({ message: "Password is incorrect" });
+            }
+
+            const token = jwt.sign(
+                { email: user.email},
+                JWT_SECRET
+            );
+
+            return res.status(200).send({
+                message: "User login successful",
+                token
+            });
+        }
+
+        // ADMIN LOGIN
+        else if (userType === "admin") {
+            if (email !== adminEmail) {
+                return res.status(400).send({ message: "Admin not found" });
+            }
+
+            // Keep adminPassword as the stored plaintext password only temporarily.
+            // Prefer storing a bcrypt hash for the admin too.
+            const isMatch = await bcrypt.compare(password, adminPassword);
+
+            if (!isMatch) {
+                return res.status(401).send({ message: "Password is incorrect" });
+            }
+
+            const token = jwt.sign(
+                { email: adminEmail},
+                JWT_SECRET           
+            );
+
+            return res.status(200).send({
+                message: "Admin login successful",
+                token
+            });
+        }
+
+        return res.status(400).send({ message: "Invalid user type" });
+
+    } catch (err) {
+        console.error("Login error:", err);
+        return res.status(500).send({ message: "Internal server error" });
+    }
 });
-
 
 
 
@@ -454,7 +538,7 @@ router.post('/userheader',authenticateToken,async(req,res)=>{
    return res.status(200).send({data:data})
    
   }
-  else if(adminEmail==req.user.email && adminPassword==req.user.password){
+  else if(adminEmail==req.user.email){
     const data={
       username:"admin",
       email:req.user.email
@@ -770,24 +854,49 @@ router.post("/forgetpasswordverifyotp",async(req,res)=>{
 
 })
 
-router.patch("/updateforgetpassword",async(req,res)=>{
-  console.log(req.body)
-  const user = await usersignupModel.findOne({ email: req.body.email });
-  if(user.password==req.body.password){
-    res.status(400).send({message:"new password have to be different from previous password"})
-    return;
-  }
-  try{
-  await usersignupModel.findOneAndUpdate(
-    {email:req.body.email},
-    {password:req.body.password},  
-    {upsert:true,new:true,setDefaultsOnInsert:true}
-  )
-  return res.status(200).send({message:"password updated"})
-  }catch{
-    return res.status(500).send({message:"internal server error"})
-  }
-})
+router.patch("/updateforgetpassword", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await usersignupModel.findOne({ email });
+
+        if (!user) {
+            return res.status(404).send({
+                message: "User not found"
+            });
+        }
+
+        // Check whether new password is same as old password
+        const isSamePassword = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (isSamePassword) {
+            return res.status(400).send({
+                message: "New password must be different from previous password"
+            });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        user.password = hashedPassword;
+
+        await user.save();
+
+        return res.status(200).send({
+            message: "Password updated"
+        });
+
+    } catch (err) {
+        console.error("Password update error:", err);
+
+        return res.status(500).send({
+            message: "Internal server error"
+        });
+    }
+});
 
 router.get('/votingstart',async(req,res)=>{
   try{
